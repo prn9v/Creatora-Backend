@@ -7,11 +7,104 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Example model - replace with your own models
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+
+  /* Profile info */
+  name          String?
+  bio  String?
+  profileImageUrl     String?
+
+  /* Account & plan */
+  plan          Plan     @default(FREE)
+  creditsUsed   Int      @default(0)
+  creditsLimit  Int      @default(50)
+
+  /* Account state */
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  /* Relations */
+  brandProfile     BrandProfile?
+  pastPosts        PastPost[]
+  generatedPosts   GeneratedPost[]
+  contentIdeas    ContentIdea[]
+  weeklyPlans     WeeklyPlan[]
+}
+
+enum Plan {
+  FREE
+  CREATOR
+  PRO
+}
+
+model BrandProfile {
+  id           String   @id @default(uuid())
+  tone         String
+  niche        String
+  audience     String
+
+  /* AI generated */
+  styleSummary String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model PastPost {
+  id        String   @id @default(uuid())
+  content   String
+
+  /* Optional AI embedding */
+  embedding Json?
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model ContentIdea {
+  id        String   @id @default(uuid())
+  title     String
+  hook      String?
+  platform  String?
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  generatedPosts GeneratedPost[]
+  createdAt DateTime @default(now())
+}
+
+model GeneratedPost {
+  id        String   @id @default(uuid())
+  content   String
+  platform  String
+
+  sourceIdeaId String?
+  sourceIdea   ContentIdea? @relation(fields: [sourceIdeaId], references: [id])
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model WeeklyPlan {
+  id        String   @id @default(uuid())
+  weekStart DateTime
+  plan      Json     // { monday: "...", tuesday: "...", ... }
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
