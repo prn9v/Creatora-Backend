@@ -1,14 +1,16 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
+import { MailService } from 'src/common/email/mail.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async signup(email: string, password: string, name?: string) {
@@ -38,6 +40,78 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     return this.issueTokens(user);
+  }
+
+  async refreshToken(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('User not found or inactive');
+    }
+
+    return this.issueTokens(user);
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ 
+      where: { email },
+    });
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); 
+
+    // Update user with OTP and expiry
+    await this.prisma.user.update({
+      where: { email },
+      data: { 
+        resetOtp: otp.toString(),
+        resetOtpExpiresAt: otpExpiresAt,
+      },
+    });
+
+    await this.mailService.sendOtpEmail(email, otp);
+
+    return {
+      message: 'OTP sent successfully',
+      success: true,
+    };
+  }
+
+  async verifyOtpAndResetPassword(user: any, otp: string, newPassword: string) {
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.resetOtp !== otp) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    if (!user.resetOtpExpiresAt || user.resetOtpExpiresAt < new Date()) {
+      throw new BadRequestException('OTP has expired');
+    }
+
+    // Hash new password
+    const hashedPassword = await this.hash(newPassword);
+
+    // Update password and clear OTP fields
+    await this.prisma.user.update({
+      where: { email: user.email },
+      data: { 
+        password: hashedPassword,
+        resetOtp: null,
+        resetOtpExpiresAt: null,
+      },
+    });
+
+    return {
+      message: 'Password reset successfully',
+      success: true,
+    };
   }
 
   private async issueTokens(user: any) {

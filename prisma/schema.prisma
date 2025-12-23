@@ -26,6 +26,10 @@ model User {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  
+  /* Password Reset OTP */
+  resetOtp            String?
+  resetOtpExpiresAt   DateTime? @map("reset_otp_expires_at")
 
   /* Relations */
   brandProfile     BrandProfile?
