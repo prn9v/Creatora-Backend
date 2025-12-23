@@ -14,6 +14,8 @@ import { AuthSignupDto } from './dto/sign-up-form.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { GetCurrentUser } from './decorator/current-user.decorator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ForgetPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 const AUTH_COOKIE = 'access_token'
 
@@ -83,6 +85,51 @@ export class AuthController {
       throw new UnauthorizedException('User not found');
     }
     return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('refresh-token')
+  @ApiOperation({ summary: 'Refresh JWT token' })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully.' })
+  async refreshToken(
+    @GetCurrentUser() user: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.refreshToken(user.sub);
+
+    res.cookie(AUTH_COOKIE, result.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return {
+      user: result.user,
+      success: true,
+    };
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset OTP' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async forgotPassword(@Body() dto: ForgetPasswordDto) {
+    return await this.authService.forgotPassword(dto.email);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with OTP' })
+  @ApiResponse({ status: 200, description: 'Password reset successful.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP.' })
+  async resetPassword(@Body() dto: ResetPasswordDto, @GetCurrentUser() user: any,) {
+    return await this.authService.verifyOtpAndResetPassword(
+      user,
+      dto.otp,
+      dto.newPassword,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
