@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Res,
   UnauthorizedException,
   UseGuards,
@@ -16,8 +17,10 @@ import { GetCurrentUser } from './decorator/current-user.decorator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ForgetPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
-const AUTH_COOKIE = 'access_token'
+const AUTH_COOKIE = 'access_token';
 
 @Controller({ path: 'users/auth', version: '1' })
 @ApiTags('Users Auth')
@@ -84,7 +87,7 @@ export class AuthController {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    return user;
+    return this.authService.getMe(user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -111,6 +114,29 @@ export class AuthController {
     };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put('update-profile')
+  @ApiOperation({ summary: 'Update user profile information' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully.' })
+  async updateProfile(
+    @GetCurrentUser() user: any,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(user, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('update-password')
+  @ApiOperation({ summary: 'Update user password' })
+  @ApiResponse({ status: 200, description: 'Password updated successfully.' })
+  async updatePassword(
+    @GetCurrentUser() user: any,
+    @Body() dto: UpdatePasswordDto,
+  ) {
+
+    return this.authService.updatePassword(user, dto);
+  }
+
   @Post('forgot-password')
   @ApiOperation({ summary: 'Request password reset OTP' })
   @ApiResponse({ status: 200, description: 'OTP sent successfully.' })
@@ -124,7 +150,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password with OTP' })
   @ApiResponse({ status: 200, description: 'Password reset successful.' })
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP.' })
-  async resetPassword(@Body() dto: ResetPasswordDto, @GetCurrentUser() user: any,) {
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @GetCurrentUser() user: any,
+  ) {
     return await this.authService.verifyOtpAndResetPassword(
       user,
       dto.otp,
