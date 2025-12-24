@@ -12,7 +12,7 @@ export class MailService {
   private async initializeTransporter() {
     this.transporter = nodemailer.createTransport({
       host: process.env.MAIL_HOST,
-      port: 587, 
+      port: 465, 
       secure: false, 
       auth: {
         user: process.env.MAIL_USER,
