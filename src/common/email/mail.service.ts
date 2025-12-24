@@ -12,11 +12,28 @@ export class MailService {
   private async initializeTransporter() {
     this.transporter = nodemailer.createTransport({
       host: process.env.MAIL_HOST,
+      port: 587, 
+      secure: false, 
       auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
-      }
+        pass: process.env.MAIL_PASS,
+      },
+      tls: {
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2',
+      },
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
+
+    // Verify connection on initialization
+    try {
+      await this.transporter.verify();
+      console.log('Mail transporter ready');
+    } catch (error) {
+      console.error('Mail transporter verification failed:', error);
+    }
   }
 
   async sendOtpEmail(email: string, otp: number): Promise<void> {
