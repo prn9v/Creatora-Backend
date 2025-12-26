@@ -133,7 +133,6 @@ export class AuthController {
     @GetCurrentUser() user: any,
     @Body() dto: UpdatePasswordDto,
   ) {
-
     return this.authService.updatePassword(user, dto);
   }
 
@@ -145,17 +144,13 @@ export class AuthController {
     return await this.authService.forgotPassword(dto.email);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset password with OTP' })
   @ApiResponse({ status: 200, description: 'Password reset successful.' })
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP.' })
-  async resetPassword(
-    @Body() dto: ResetPasswordDto,
-    @GetCurrentUser() user: any,
-  ) {
+  async resetPassword(@Body() dto: ResetPasswordDto) {
     return await this.authService.verifyOtpAndResetPassword(
-      user,
+      dto.email,
       dto.otp,
       dto.newPassword,
     );

@@ -201,7 +201,16 @@ export class AuthService {
     };
   }
 
-  async verifyOtpAndResetPassword(user: any, otp: string, newPassword: string) {
+  async verifyOtpAndResetPassword(
+    email: string,
+    otp: string,
+    newPassword: string,
+  ) {
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -214,12 +223,10 @@ export class AuthService {
       throw new BadRequestException('OTP has expired');
     }
 
-    // Hash new password
     const hashedPassword = await this.hash(newPassword);
 
-    // Update password and clear OTP fields
     await this.prisma.user.update({
-      where: { email: user.email },
+      where: { email },
       data: {
         password: hashedPassword,
         resetOtp: null,
