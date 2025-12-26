@@ -201,7 +201,16 @@ export class AuthService {
     };
   }
 
-  async verifyOtpAndResetPassword(user: any, otp: string, newPassword: string) {
+  async verifyOtpAndResetPassword(
+    email: string,
+    otp: string,
+    newPassword: string,
+  ) {
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -214,12 +223,10 @@ export class AuthService {
       throw new BadRequestException('OTP has expired');
     }
 
-    // Hash new password
     const hashedPassword = await this.hash(newPassword);
 
-    // Update password and clear OTP fields
     await this.prisma.user.update({
-      where: { email: user.email },
+      where: { email },
       data: {
         password: hashedPassword,
         resetOtp: null,
@@ -232,6 +239,41 @@ export class AuthService {
       success: true,
     };
   }
+
+  async deleteAccount(user: any, password: string) {
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  // Fetch full user from DB (INCLUDING password)
+  const dbUser = await this.prisma.user.findUnique({
+    where: { id: user.id },
+  });
+
+  if (!dbUser) {
+    throw new NotFoundException('User not found in database');
+  }
+
+  // Verify password using the dbUser password
+  const isPasswordValid = await this.compare(dbUser.password, password);
+
+  if (!isPasswordValid) {
+    throw new BadRequestException('Invalid password');
+  }
+
+  // Optional: Send deletion confirmation email before deleting
+  await this.mailService.sendAccountDeletionEmail(dbUser.email, user.name);
+
+  // Delete user and all related data (Prisma will handle cascade if configured)
+  await this.prisma.user.delete({
+    where: { id: dbUser.id },
+  });
+
+  return {
+    message: 'Account deleted successfully',
+    success: true,
+  };
+}
 
   private async issueTokens(user: any) {
     const payload = {

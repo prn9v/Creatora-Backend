@@ -6,60 +6,136 @@ export class MailService {
   private transporter;
 
   constructor() {
-    this.transporter;
+    this.initializeTransporter();
   }
 
   private async initializeTransporter() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: 465, 
-      secure: false, 
+      service: 'gmail',
       auth: {
+        type: 'OAuth2',
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        clientId: process.env.OAUTH_CLIENT_ID,
+        clientSecret: process.env.OAUTH_CLIENT_SECRET,
+        refreshToken: process.env.OAUTH_REFRESH_TOKEN,
       },
-      tls: {
-        rejectUnauthorized: true,
-        minVersion: 'TLSv1.2',
-      },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
     });
 
     // Verify connection on initialization
     try {
       await this.transporter.verify();
-      console.log('Mail transporter ready');
+      console.log('✅ Mail transporter ready (OAuth2)');
     } catch (error) {
-      console.error('Mail transporter verification failed:', error);
+      console.error('❌ Mail transporter verification failed:', error);
     }
   }
 
   async sendOtpEmail(email: string, otp: number): Promise<void> {
     try {
-      // Ensure transporter is initialized
-      if (!this.transporter) {
-        await this.initializeTransporter();
-      }
-
-      const info = await this.transporter.sendMail({
-        from: process.env.MAIL_USER,
+      await this.transporter.sendMail({
+        from: `"Creatora" <${process.env.MAIL_USER}>`,
         to: email,
-        subject: 'Password Reset OTP',
+        subject: 'Creatora Password Reset Verification Code',
         html: `
-          <div style="font-family: Arial, sans-serif;">
-            <h2>Password Reset Request</h2>
-            <p>Your OTP is:</p>
-            <h1 style="letter-spacing: 4px;">${otp}</h1>
-            <p>This OTP will expire in <strong>15 minutes</strong>.</p>
-            <p>If you did not request this, please ignore this email.</p>
-          </div>
-        `,
+  <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+    
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="margin: 0; color: #2c2c2c;">Creatora</h1>
+      <p style="margin: 5px 0 0; color: #777; font-size: 14px;">
+        Empowering creators across every content domain
+      </p>
+    </div>
+
+    <h2 style="color: #2c2c2c;">Password Reset Request</h2>
+
+    <p style="font-size: 15px; line-height: 1.6;">
+      We received a request to reset the password associated with your Creatora account.
+      To proceed, please use the one-time verification code below:
+    </p>
+
+    <div style="background: #f5f7f9; padding: 24px; text-align: center; border-radius: 6px; margin: 30px 0;">
+      <span style="display: block; font-size: 32px; letter-spacing: 10px; font-weight: bold; color: #1a8f5a;">
+        ${otp}
+      </span>
+    </div>
+
+    <p style="font-size: 14px; line-height: 1.6;">
+      This verification code will expire in <strong>15 minutes</strong> for security reasons.
+    </p>
+
+    <p style="font-size: 14px; line-height: 1.6; color: #555;">
+      If you did not initiate this request, no action is required. Your account will remain secure.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
+
+    <p style="font-size: 12px; color: #888; line-height: 1.5;">
+      This email was sent by Creatora, a leading startup platform built for creators of all types.
+      Please do not reply to this automated message.
+    </p>
+
+  </div>
+`,
       });
+
+      console.log(`✅ OTP email sent to ${email}`);
     } catch (error) {
-      console.error('Email error:', error);
+      console.error('❌ Email error:', error);
       throw new InternalServerErrorException('Failed to send OTP email');
+    }
+  }
+
+  async sendAccountDeletionEmail(email: string, name: string): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: `"Creatora" <${process.env.MAIL_USER}>`,
+        to: email,
+        subject: 'Creatora Account Deletion Confirmation',
+        html: `
+        <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="margin: 0; color: #2c2c2c;">Creatora</h1>
+            <p style="margin: 5px 0 0; color: #777; font-size: 14px;">
+              Empowering creators across every content domain
+            </p>
+          </div>
+
+          <h2 style="color: #2c2c2c;">Account Deletion Confirmation</h2>
+
+          <p style="font-size: 15px; line-height: 1.6;">
+            Dear ${name || 'Customer'},
+          </p>
+
+          <p style="font-size: 15px; line-height: 1.6;">
+            This email confirms that your Creatora account has been successfully deleted from our system,
+            in accordance with your request.
+          </p>
+
+          <p style="font-size: 15px; line-height: 1.6;">
+            We appreciate the time you spent with Creatora and regret to see you leave.
+            If you have any feedback or suggestions, we would value hearing from you.
+          </p>
+
+          <p style="font-size: 14px; line-height: 1.6; color: #555; margin-top: 30px;">
+            If you did not initiate this account deletion or believe this action was taken in error,
+            please contact our support team immediately.
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
+
+          <p style="font-size: 12px; color: #888; line-height: 1.5;">
+            This is an automated message from Creatora. Please do not reply to this email.
+          </p>
+
+        </div>
+      `,
+      });
+
+      console.log(`✅ Account deletion email sent to ${email}`);
+    } catch (error) {
+      console.error('❌ Email error:', error);
+      // Account deletion has already been completed; do not rethrow
     }
   }
 }

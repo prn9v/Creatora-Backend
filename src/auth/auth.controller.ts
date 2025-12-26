@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Put,
@@ -19,6 +20,7 @@ import { ForgetPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { DeleteAccountDto } from './dto/delete-profile.dto';
 
 const AUTH_COOKIE = 'access_token';
 
@@ -133,7 +135,6 @@ export class AuthController {
     @GetCurrentUser() user: any,
     @Body() dto: UpdatePasswordDto,
   ) {
-
     return this.authService.updatePassword(user, dto);
   }
 
@@ -145,17 +146,13 @@ export class AuthController {
     return await this.authService.forgotPassword(dto.email);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset password with OTP' })
   @ApiResponse({ status: 200, description: 'Password reset successful.' })
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP.' })
-  async resetPassword(
-    @Body() dto: ResetPasswordDto,
-    @GetCurrentUser() user: any,
-  ) {
+  async resetPassword(@Body() dto: ResetPasswordDto) {
     return await this.authService.verifyOtpAndResetPassword(
-      user,
+      dto.email,
       dto.otp,
       dto.newPassword,
     );
@@ -173,5 +170,18 @@ export class AuthController {
     });
 
     return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  @ApiOperation({ summary: 'Delete user account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 400, description: 'Invalid password.' })
+  async deleteAccount(
+    @Body() dto: DeleteAccountDto,
+    @GetCurrentUser() user: any,
+  ) {
+    return await this.authService.deleteAccount(user, dto.password);
   }
 }
