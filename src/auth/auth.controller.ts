@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Put,
@@ -19,6 +20,7 @@ import { ForgetPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { DeleteAccountDto } from './dto/delete-profile.dto';
 
 const AUTH_COOKIE = 'access_token';
 
@@ -168,5 +170,18 @@ export class AuthController {
     });
 
     return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  @ApiOperation({ summary: 'Delete user account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 400, description: 'Invalid password.' })
+  async deleteAccount(
+    @Body() dto: DeleteAccountDto,
+    @GetCurrentUser() user: any,
+  ) {
+    return await this.authService.deleteAccount(user, dto.password);
   }
 }

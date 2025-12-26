@@ -84,4 +84,58 @@ export class MailService {
       throw new InternalServerErrorException('Failed to send OTP email');
     }
   }
+
+  async sendAccountDeletionEmail(email: string, name: string): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: `"Creatora" <${process.env.MAIL_USER}>`,
+        to: email,
+        subject: 'Creatora Account Deletion Confirmation',
+        html: `
+        <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="margin: 0; color: #2c2c2c;">Creatora</h1>
+            <p style="margin: 5px 0 0; color: #777; font-size: 14px;">
+              Empowering creators across every content domain
+            </p>
+          </div>
+
+          <h2 style="color: #2c2c2c;">Account Deletion Confirmation</h2>
+
+          <p style="font-size: 15px; line-height: 1.6;">
+            Dear ${name || 'Customer'},
+          </p>
+
+          <p style="font-size: 15px; line-height: 1.6;">
+            This email confirms that your Creatora account has been successfully deleted from our system,
+            in accordance with your request.
+          </p>
+
+          <p style="font-size: 15px; line-height: 1.6;">
+            We appreciate the time you spent with Creatora and regret to see you leave.
+            If you have any feedback or suggestions, we would value hearing from you.
+          </p>
+
+          <p style="font-size: 14px; line-height: 1.6; color: #555; margin-top: 30px;">
+            If you did not initiate this account deletion or believe this action was taken in error,
+            please contact our support team immediately.
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
+
+          <p style="font-size: 12px; color: #888; line-height: 1.5;">
+            This is an automated message from Creatora. Please do not reply to this email.
+          </p>
+
+        </div>
+      `,
+      });
+
+      console.log(`✅ Account deletion email sent to ${email}`);
+    } catch (error) {
+      console.error('❌ Email error:', error);
+      // Account deletion has already been completed; do not rethrow
+    }
+  }
 }

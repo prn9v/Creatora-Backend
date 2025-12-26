@@ -240,6 +240,41 @@ export class AuthService {
     };
   }
 
+  async deleteAccount(user: any, password: string) {
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  // Fetch full user from DB (INCLUDING password)
+  const dbUser = await this.prisma.user.findUnique({
+    where: { id: user.id },
+  });
+
+  if (!dbUser) {
+    throw new NotFoundException('User not found in database');
+  }
+
+  // Verify password using the dbUser password
+  const isPasswordValid = await this.compare(dbUser.password, password);
+
+  if (!isPasswordValid) {
+    throw new BadRequestException('Invalid password');
+  }
+
+  // Optional: Send deletion confirmation email before deleting
+  await this.mailService.sendAccountDeletionEmail(dbUser.email, user.name);
+
+  // Delete user and all related data (Prisma will handle cascade if configured)
+  await this.prisma.user.delete({
+    where: { id: dbUser.id },
+  });
+
+  return {
+    message: 'Account deleted successfully',
+    success: true,
+  };
+}
+
   private async issueTokens(user: any) {
     const payload = {
       sub: user.id,
