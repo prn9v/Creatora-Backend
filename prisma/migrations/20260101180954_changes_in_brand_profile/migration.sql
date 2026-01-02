@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "BrandProfile" ALTER COLUMN "niche" DROP NOT NULL,
+ALTER COLUMN "audience" DROP NOT NULL,
+ALTER COLUMN "tone" DROP NOT NULL;
