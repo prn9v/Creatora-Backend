@@ -8,35 +8,46 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  password      String
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
 
-  /* Profile info */
-  name          String?
-  bio  String?
-  profileImageUrl     String?
+  /**
+   * Profile info
+   */
+  name            String?
+  bio             String?
+  profileImageUrl String?
 
-  /* Account & plan */
-  plan          Plan     @default(FREE)
-  creditsUsed   Int      @default(0)
-  creditsLimit  Int      @default(50)
+  /**
+   * Account & plan
+   */
+  plan         Plan @default(FREE)
+  creditsUsed  Int  @default(0)
+  creditsLimit Int  @default(50)
 
-  /* Account state */
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  /* Password Reset OTP */
-  resetOtp            String?
-  resetOtpExpiresAt   DateTime? @map("reset_otp_expires_at")
+  /**
+   * Account state
+   */
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  /* Relations */
-  brandProfile     BrandProfile?
-  pastPosts        PastPost[]
-  generatedPosts   GeneratedPost[]
-  contentIdeas    ContentIdea[]
-  weeklyPlans     WeeklyPlan[]
+  /**
+   * Password Reset OTP
+   */
+  resetOtp          String?
+  resetOtpExpiresAt DateTime? @map("reset_otp_expires_at")
+
+  /**
+   * Relations
+   */
+  brandProfile   BrandProfile?
+  pastPosts      PastPost[]
+  generatedPosts GeneratedPost[]
+  contentIdeas   ContentIdea[]
+  weeklyPlans    WeeklyPlan[]
+  socialAccounts SocialAccount[]
 }
 
 enum Plan {
@@ -46,13 +57,31 @@ enum Plan {
 }
 
 model BrandProfile {
-  id           String   @id @default(uuid())
-  tone         String
-  niche        String
-  audience     String
+  id       String @id @default(uuid())
+  tone     Tone?
+  niche    String?
+  audience String?
 
-  /* AI generated */
+  /**
+   * AI generated
+   */
   styleSummary String?
+
+  /**
+   * Writing style analysis
+   */
+  avgSentenceLength    Float?
+  vocabularyComplexity String? // simple, moderate, advanced
+  commonPhrases        Json? // Array of frequently used phrases
+  topicPreferences     Json? // Array of common topics
+
+  /**
+   * Voice characteristics
+   */
+  formalityScore    Float? // 0-1 scale
+  emotionalTone     String? // analytical, empathetic, enthusiastic, etc.
+  humorUsage        Boolean @default(false)
+  storytellingStyle String? // direct, narrative, conversational
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])
@@ -61,42 +90,101 @@ model BrandProfile {
   updatedAt DateTime @updatedAt
 }
 
-model PastPost {
-  id        String   @id @default(uuid())
-  content   String
+enum Tone {
+  PROFESSIONAL
+  CASUAL
+  INSPIRING
+  EDUCATIONAL
+}
 
-  /* Optional AI embedding */
-  embedding Json?
+model SocialAccount {
+  id       String         @id @default(uuid())
+  platform SocialPlatform
+  username String?
+
+  /**
+   * Account metrics
+   */
+  followers     Int?
+  engagement    Float? // Average engagement rate
+  postFrequency String? // daily, weekly, etc.
+
+  /**
+   * Platform-specific data
+   */
+  metadata Json? // Store platform-specific info
+
+  /**
+   * Account status
+   */
+  isConnected Boolean   @default(false)
+  lastSynced  DateTime?
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, platform])
+}
+
+enum SocialPlatform {
+  TWITTER
+  LINKEDIN
+  INSTAGRAM
+  FACEBOOK
+  YOUTUBE
+  BLOG
+  EMAIL
+  THREAD
+}
+
+model PastPost {
+  id      String @id @default(uuid())
+  /**
+   * Optional AI embedding
+   */
+  content   String   
+  platform  String?  // instagram, twitter, linkedin, facebook, youtube, blog
+  url       String?  // Original post URL
+  author    String?  // Author/username
+  mediaUrl  String?  // URL of image/video
+  type      String?  // text, image, video
+
+  metadata  Json?    // Platform-specific metadata (likes, comments, etc.)
+  analysis  Json?    // Detailed AI analysis of the post
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ContentIdea {
-  id        String   @id @default(uuid())
-  title     String
-  hook      String?
-  platform  String?
+  id       String  @id @default(uuid())
+  title    String
+  hook     String?
+  platform String?
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   generatedPosts GeneratedPost[]
-  createdAt DateTime @default(now())
+  createdAt      DateTime        @default(now())
 }
 
 model GeneratedPost {
-  id        String   @id @default(uuid())
-  content   String
-  platform  String
+  id       String @id @default(uuid())
+  content  String
+  platform String
 
   sourceIdeaId String?
   sourceIdea   ContentIdea? @relation(fields: [sourceIdeaId], references: [id])
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -104,11 +192,10 @@ model GeneratedPost {
 model WeeklyPlan {
   id        String   @id @default(uuid())
   weekStart DateTime
-  plan      Json     // { monday: "...", tuesday: "...", ... }
+  plan      Json // { monday: "...", tuesday: "...", ... }
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 }
-
