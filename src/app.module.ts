@@ -6,6 +6,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ExtractorModule } from './onboarding/onboarding.module';
 import { ContentGenerationModule } from './content-generation/content-generation.module';
+import { ProfileModule } from './profile/profile.module';
+import { ImageModule } from './common/image/image.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { ContentGenerationModule } from './content-generation/content-generation
     AuthModule,
     ExtractorModule,
     ContentGenerationModule,
+    ProfileModule,
+    ImageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

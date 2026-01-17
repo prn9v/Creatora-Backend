@@ -18,7 +18,7 @@ import { GetCurrentUser } from './decorator/current-user.decorator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ForgetPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateProfileDto } from '../profile/dto/update-profile.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { DeleteAccountDto } from './dto/delete-profile.dto';
 
@@ -114,17 +114,6 @@ export class AuthController {
       user: result.user,
       success: true,
     };
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Put('update-profile')
-  @ApiOperation({ summary: 'Update user profile information' })
-  @ApiResponse({ status: 200, description: 'Profile updated successfully.' })
-  async updateProfile(
-    @GetCurrentUser() user: any,
-    @Body() dto: UpdateProfileDto,
-  ) {
-    return this.authService.updateProfile(user, dto);
   }
 
   @UseGuards(JwtAuthGuard)
