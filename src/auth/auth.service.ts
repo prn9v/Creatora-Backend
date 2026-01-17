@@ -10,7 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { MailService } from 'src/common/email/mail.service';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateProfileDto } from '../profile/dto/update-profile.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Injectable()
@@ -83,41 +83,6 @@ export class AuthService {
     }
 
     return this.issueTokens(user);
-  }
-
-  async updateProfile(user: any, dto: UpdateProfileDto) {
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Prevent duplicate email usage
-    if (dto.email && dto.email !== user.email) {
-      const emailExists = await this.prisma.user.findUnique({
-        where: { email: dto.email },
-      });
-
-      if (emailExists) {
-        throw new ConflictException('Email already in use');
-      }
-    }
-
-    return this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        name: dto.name,
-        email: dto.email,
-        bio: dto.bio,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        bio: true,
-        profileImageUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
   }
 
   async updatePassword(user: any, dto: UpdatePasswordDto) {
