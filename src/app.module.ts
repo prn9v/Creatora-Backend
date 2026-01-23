@@ -8,6 +8,7 @@ import { ExtractorModule } from './onboarding/onboarding.module';
 import { ContentGenerationModule } from './content-generation/content-generation.module';
 import { ProfileModule } from './profile/profile.module';
 import { ImageModule } from './common/image/image.module';
+import { GeneratedPostsModule } from './generated-posts/generated-posts.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ImageModule } from './common/image/image.module';
     ContentGenerationModule,
     ProfileModule,
     ImageModule,
+    GeneratedPostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
