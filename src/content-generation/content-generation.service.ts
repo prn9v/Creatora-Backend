@@ -154,7 +154,6 @@ export class ContentGenerationService {
           `${this.fastApiUrl}/generate-post`,
           fastApiRequest,
           {
-            timeout: 120000, // 2 minutes timeout
             headers: {
               'Content-Type': 'application/json',
             },
