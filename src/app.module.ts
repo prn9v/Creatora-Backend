@@ -9,6 +9,7 @@ import { ContentGenerationModule } from './content-generation/content-generation
 import { ProfileModule } from './profile/profile.module';
 import { ImageModule } from './common/image/image.module';
 import { GeneratedPostsModule } from './generated-posts/generated-posts.module';
+import { IdeasModule } from './ideas-generation/ideas-generation.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { GeneratedPostsModule } from './generated-posts/generated-posts.module';
     ProfileModule,
     ImageModule,
     GeneratedPostsModule,
+    IdeasModule,
   ],
   controllers: [AppController],
   providers: [AppService],
