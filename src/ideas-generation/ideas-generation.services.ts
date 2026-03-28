@@ -122,7 +122,7 @@ Each object must have exactly these fields:
             topicPreferences: brand.topicPreferences ?? [],
             vocabularyComplexity: brand.vocabularyComplexity ?? '',
             tone: brand.tone ?? '',
-            ideaCount: 15,
+            ideaCount: 2,
           }),
         },
       );
@@ -131,7 +131,9 @@ Each object must have exactly these fields:
         throw new Error(`GenAI model responded with status ${response.status}`);
       }
 
-      ideas = await response.json();
+      const responseData = await response.json();
+      ideas = responseData.ideas ?? responseData;
+      console.log(ideas);
     } catch (error) {
       this.logger.error('GenAI model fetch failed:', error);
       throw new InternalServerErrorException(
