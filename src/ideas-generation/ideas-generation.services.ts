@@ -122,7 +122,7 @@ Each object must have exactly these fields:
             topicPreferences: brand.topicPreferences ?? [],
             vocabularyComplexity: brand.vocabularyComplexity ?? '',
             tone: brand.tone ?? '',
-            ideaCount: 2,
+            ideaCount: 10,
           }),
         },
       );
