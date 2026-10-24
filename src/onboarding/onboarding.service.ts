@@ -242,26 +242,22 @@ export class OnboardingService {
 
   private async scrapeLinkedIn(url: string): Promise<ExtractedContent> {
     try {
-      let run;
-      try {
-        run = await this.client
-          .actor('curious_coder/linkedin-post-scraper')
-          .call({
-            postUrl: url,
-          });
-      } catch (e) {
-        run = await this.client.actor('anchor/linkedin-post-scraper').call({
-          startUrls: [{ url }],
-          maxItems: 1,
-        });
-      }
+      const run = await this.client.actor('johnvc/linkedin-posts-api').call({
+        postUrls: [url],
+      });
 
       const { items } = await this.client
         .dataset(run.defaultDatasetId)
         .listItems();
-      const data = items[0] as any;
+      // A URL the Actor cannot read comes back as a result_type 'error' row
+      const data = items.find((item) => item.result_type === 'post') as any;
 
-      if (!data) throw new Error('No LinkedIn data found');
+      if (!data) {
+        const errorRow = items.find((item) => item.result_type === 'error');
+        throw new Error(
+          (errorRow?.error_message as string) || 'No LinkedIn data found',
+        );
+      }
 
       const content =
         data.text ||
@@ -284,7 +280,7 @@ export class OnboardingService {
           likes: data.numLikes || data.reactions,
           comments: data.numComments || data.commentsCount,
           shares: data.numShares,
-          timestamp: data.postedAt || data.publishedAt,
+          timestamp: data.datePosted || data.postedAt || data.publishedAt,
         },
       };
     } catch (error) {
